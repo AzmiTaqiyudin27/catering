@@ -31,7 +31,8 @@ Sistem manajemen catering lengkap dengan fitur multi-role untuk mengelola pesana
 ### Backend
 - Node.js + Express.js
 - Prisma ORM
-- MySQL (via XAMPP)
+- PostgreSQL (Neon DB / Supabase) & MySQL compatible
+- Supabase Storage (Cloud file uploads CDN)
 - JWT Authentication
 - bcrypt password hashing
 
@@ -41,6 +42,10 @@ Sistem manajemen catering lengkap dengan fitur multi-role untuk mengelola pesana
 - React Router
 - Recharts (untuk grafik)
 - Axios
+
+## 🚀 Panduan Deployment (Neon DB, Supabase, Vercel)
+Untuk panduan langkah demi langkah mendeploy aplikasi ini ke cloud gratis menggunakan **Neon DB**, **Supabase Storage**, dan **Vercel**, silakan baca panduan lengkap di:
+👉 [**DEPLOYMENT.md**](./DEPLOYMENT.md)
 
 ## 📁 Struktur Folder
 

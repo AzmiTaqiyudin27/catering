@@ -77,8 +77,12 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
-  console.log(`📚 API Documentation: http://localhost:${PORT}/api/health`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
+    console.log(`📚 API Documentation: http://localhost:${PORT}/api/health`);
+  });
+}
+
+module.exports = app;
 

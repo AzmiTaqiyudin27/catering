@@ -3,16 +3,21 @@
   "version": "1.0.0",
   "description": "Fullstack Catering Management System",
   "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
-    "install:all": "npm --prefix backend install && npm --prefix frontend install",
-    "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
-    "build:backend": "npm --prefix backend install && npm --prefix backend run prisma:generate",
+    "install:all": "npm install",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run prisma:generate",
     "build": "npm run build:backend && npm run build:frontend",
     "start": "node backend/src/index.js",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "seed": "npm --prefix backend run seed",
     "db:push": "npm --prefix backend run db:push",
+    "prisma:generate": "npm --prefix backend run prisma:generate",
     "prisma:deploy": "npm --prefix backend run prisma:deploy",
     "test": "npm --prefix backend test",
     "test:whitebox": "npm --prefix backend run test:whitebox",
@@ -24,7 +29,10 @@
     "express",
     "react",
     "prisma",
-    "mysql"
+    "postgresql",
+    "neon",
+    "supabase",
+    "vercel"
   ],
   "author": "",
   "license": "ISC"

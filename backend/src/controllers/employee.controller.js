@@ -3,6 +3,7 @@ const { logActivity } = require('../utils/activityLogger');
 const { paginate, paginationResponse, generateEmployeeId } = require('../utils/helpers');
 const fs = require('fs');
 const path = require('path');
+const { deleteFromStorage } = require('../services/storage.service');
 
 // Get all employees
 const getAllEmployees = async (req, res) => {
@@ -108,7 +109,9 @@ const createEmployee = async (req, res) => {
       notes,
     } = req.body;
 
-    const photo = req.file ? `/uploads/employees/${req.file.filename}` : null;
+    const photo = req.file
+      ? (req.file.publicUrl || (req.file.filename.startsWith('http') ? req.file.filename : `/uploads/employees/${req.file.filename}`))
+      : null;
 
     // Generate unique employee ID safely
     const allEmployees = await prisma.employee.findMany({
@@ -201,12 +204,9 @@ const updateEmployee = async (req, res) => {
     if (req.file) {
       // Delete old photo if exists
       if (existingEmployee.photo) {
-        const oldPhotoPath = path.join(__dirname, '../../', existingEmployee.photo);
-        if (fs.existsSync(oldPhotoPath)) {
-          fs.unlinkSync(oldPhotoPath);
-        }
+        await deleteFromStorage(existingEmployee.photo);
       }
-      photo = `/uploads/employees/${req.file.filename}`;
+      photo = req.file.publicUrl || (req.file.filename.startsWith('http') ? req.file.filename : `/uploads/employees/${req.file.filename}`);
     }
 
     const employee = await prisma.employee.update({
@@ -271,10 +271,7 @@ const deleteEmployee = async (req, res) => {
 
     // Delete photo if exists
     if (existingEmployee.photo) {
-      const photoPath = path.join(__dirname, '../../', existingEmployee.photo);
-      if (fs.existsSync(photoPath)) {
-        fs.unlinkSync(photoPath);
-      }
+      await deleteFromStorage(existingEmployee.photo);
     }
 
     await prisma.employee.delete({

@@ -3,6 +3,7 @@ const { logActivity } = require('../utils/activityLogger');
 const { paginate, paginationResponse } = require('../utils/helpers');
 const fs = require('fs');
 const path = require('path');
+const { deleteFromStorage } = require('../services/storage.service');
 
 // Get all menus
 const getAllMenus = async (req, res) => {
@@ -95,7 +96,9 @@ const getMenuById = async (req, res) => {
 const createMenu = async (req, res) => {
   try {
     const { name, description, category, price, isAvailable } = req.body;
-    const image = req.file ? `/uploads/menus/${req.file.filename}` : null;
+    const image = req.file
+      ? (req.file.publicUrl || (req.file.filename.startsWith('http') ? req.file.filename : `/uploads/menus/${req.file.filename}`))
+      : null;
 
     const menu = await prisma.menu.create({
       data: {
@@ -157,12 +160,9 @@ const updateMenu = async (req, res) => {
     if (req.file) {
       // Delete old image if exists
       if (existingMenu.image) {
-        const oldImagePath = path.join(__dirname, '../../', existingMenu.image);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-        }
+        await deleteFromStorage(existingMenu.image);
       }
-      image = `/uploads/menus/${req.file.filename}`;
+      image = req.file.publicUrl || (req.file.filename.startsWith('http') ? req.file.filename : `/uploads/menus/${req.file.filename}`);
     }
 
     const menu = await prisma.menu.update({
@@ -222,10 +222,7 @@ const deleteMenu = async (req, res) => {
 
     // Delete image if exists
     if (existingMenu.image) {
-      const imagePath = path.join(__dirname, '../../', existingMenu.image);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
+      await deleteFromStorage(existingMenu.image);
     }
 
     await prisma.menu.delete({

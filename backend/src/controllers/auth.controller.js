@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/database');
 const { logActivity } = require('../utils/activityLogger');
+const { deleteFromStorage } = require('../services/storage.service');
 
 // Register
 const register = async (req, res) => {
@@ -169,7 +170,17 @@ const getMe = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const { name, phone, address } = req.body;
-    const avatar = req.file ? `/uploads/avatars/${req.file.filename}` : undefined;
+    let avatar;
+    if (req.file) {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { avatar: true },
+      });
+      if (currentUser?.avatar) {
+        await deleteFromStorage(currentUser.avatar);
+      }
+      avatar = req.file.publicUrl || (req.file.filename.startsWith('http') ? req.file.filename : `/uploads/avatars/${req.file.filename}`);
+    }
 
     const updateData = { name, phone, address };
     if (avatar) updateData.avatar = avatar;
