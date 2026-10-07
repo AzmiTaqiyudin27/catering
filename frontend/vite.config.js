@@ -10,7 +10,23 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
+      '/uploads': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
     },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-recharts': ['recharts'],
+          'vendor-icons': ['react-icons'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
   },
 })
 

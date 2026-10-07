@@ -9,6 +9,7 @@ import {
   HiOutlineCurrencyDollar,
   HiOutlineDownload,
   HiOutlineCalendar,
+  HiOutlineDocumentReport,
 } from 'react-icons/hi';
 import {
   BarChart,
@@ -71,9 +72,29 @@ const FinanceRecap = () => {
       link.click();
       link.remove();
       
-      toast.success('Laporan berhasil diunduh');
+      toast.success('Laporan Excel berhasil diunduh');
     } catch (error) {
-      toast.error('Gagal mengunduh laporan');
+      toast.error('Gagal mengunduh laporan Excel');
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const response = await reportsAPI.generatePDF({
+        type: 'finance',
+        startDate: dateFilter.start,
+        endDate: dateFilter.end,
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `laporan-keuangan-${Date.now()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Laporan PDF berhasil diunduh');
+    } catch (error) {
+      toast.error('Gagal mengunduh laporan PDF');
     }
   };
 
@@ -116,10 +137,16 @@ const FinanceRecap = () => {
           <h1 className="page-title">Rekapitulasi Keuangan</h1>
           <p className="page-subtitle">Ringkasan pemasukan dan pengeluaran</p>
         </div>
-        <button onClick={handleExport} className="btn btn-primary">
-          <HiOutlineDownload className="w-5 h-5 mr-2" />
-          Export Excel
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={handleExportPDF} className="btn btn-secondary">
+            <HiOutlineDocumentReport className="w-5 h-5 mr-2 text-red-500" />
+            Export PDF
+          </button>
+          <button onClick={handleExport} className="btn btn-primary">
+            <HiOutlineDownload className="w-5 h-5 mr-2" />
+            Export Excel
+          </button>
+        </div>
       </div>
 
       {/* Date Filter */}

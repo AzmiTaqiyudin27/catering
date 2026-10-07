@@ -54,7 +54,20 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
+// Serve frontend in production if built
+const fs = require('fs');
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  });
+}
+
+// 404 handler for unmatched API requests
 app.use((req, res) => {
   res.status(404).json({
     success: false,

@@ -1,0 +1,28 @@
+{
+  "name": "catering-management-system",
+  "version": "1.0.0",
+  "description": "Fullstack Catering Management System",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend install && npm --prefix backend run prisma:generate",
+    "build": "npm run build:backend && npm run build:frontend",
+    "start": "node backend/src/index.js",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "seed": "npm --prefix backend run seed",
+    "db:push": "npm --prefix backend run db:push",
+    "prisma:deploy": "npm --prefix backend run prisma:deploy"
+  },
+  "keywords": [
+    "catering",
+    "management",
+    "express",
+    "react",
+    "prisma",
+    "mysql"
+  ],
+  "author": "",
+  "license": "ISC"
+}

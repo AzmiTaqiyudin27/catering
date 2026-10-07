@@ -79,18 +79,56 @@ const getDashboard = async (req, res) => {
       },
     });
 
+    // Orders by status
+    const ordersByStatus = await prisma.orderIn.groupBy({
+      by: ['status'],
+      _count: true,
+      _sum: { totalAmount: true },
+    });
+
+    // Monthly cashflow for last 6 months
+    const monthlyCashflow = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const mStart = new Date(d.getFullYear(), d.getMonth(), 1);
+      const mEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+      const mName = d.toLocaleDateString('id-ID', { month: 'short' });
+
+      const [mInc, mExp] = await Promise.all([
+        prisma.income.aggregate({
+          where: { date: { gte: mStart, lte: mEnd } },
+          _sum: { amount: true },
+        }),
+        prisma.expense.aggregate({
+          where: { date: { gte: mStart, lte: mEnd } },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      const inc = parseFloat(mInc._sum.amount || 0);
+      const exp = parseFloat(mExp._sum.amount || 0);
+      monthlyCashflow.push({
+        month: mName,
+        income: inc,
+        expense: exp,
+        profit: inc - exp,
+      });
+    }
+
     res.json({
       success: true,
       data: {
         summary: {
-          incomeThisMonth: incomeThisMonth._sum.amount || 0,
-          expenseThisMonth: expenseThisMonth._sum.amount || 0,
-          profit: (incomeThisMonth._sum.amount || 0) - (expenseThisMonth._sum.amount || 0),
+          incomeThisMonth: parseFloat(incomeThisMonth._sum.amount || 0),
+          expenseThisMonth: parseFloat(expenseThisMonth._sum.amount || 0),
+          profit: parseFloat(incomeThisMonth._sum.amount || 0) - parseFloat(expenseThisMonth._sum.amount || 0),
           ordersThisMonth,
           totalMenus,
           totalEmployees,
           lowStockCount,
         },
+        monthlyCashflow,
+        ordersByStatus,
         recentOrders,
         recentActivities,
       },
@@ -470,22 +508,102 @@ const generatePDFReport = async (req, res) => {
         };
       }
 
-      const [incomes, expenses] = await Promise.all([
+      const [incomes, expenses, recentIncomes, recentExpenses] = await Promise.all([
         prisma.income.aggregate({ where, _sum: { amount: true }, _count: true }),
         prisma.expense.aggregate({ where, _sum: { amount: true }, _count: true }),
+        prisma.income.findMany({ where, orderBy: { date: 'desc' }, take: 10 }),
+        prisma.expense.findMany({ where, orderBy: { date: 'desc' }, take: 10 }),
       ]);
 
+      const totalInc = parseFloat(incomes._sum.amount || 0);
+      const totalExp = parseFloat(expenses._sum.amount || 0);
+      const profit = totalInc - totalExp;
+
       doc.fontSize(14).text('RINGKASAN KEUANGAN', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(11);
+      doc.text(`Total Pemasukan: Rp ${totalInc.toLocaleString('id-ID')} (${incomes._count} transaksi)`);
+      doc.text(`Total Pengeluaran: Rp ${totalExp.toLocaleString('id-ID')} (${expenses._count} transaksi)`);
+      doc.text(`Keuntungan Bersih: Rp ${profit.toLocaleString('id-ID')}`);
       doc.moveDown();
-      doc.fontSize(12);
-      doc.text(`Total Pemasukan: Rp ${(incomes._sum.amount || 0).toLocaleString('id-ID')}`);
-      doc.text(`Jumlah Transaksi Pemasukan: ${incomes._count}`);
+
+      if (recentIncomes.length > 0) {
+        doc.fontSize(12).text('Sampel Pemasukan Terbaru:', { underline: true });
+        doc.fontSize(10);
+        recentIncomes.forEach((inc, idx) => {
+          doc.text(`${idx + 1}. ${new Date(inc.date).toLocaleDateString('id-ID')} - ${inc.description} (${inc.category}): Rp ${parseFloat(inc.amount).toLocaleString('id-ID')}`);
+        });
+        doc.moveDown();
+      }
+
+      if (recentExpenses.length > 0) {
+        doc.fontSize(12).text('Sampel Pengeluaran Terbaru:', { underline: true });
+        doc.fontSize(10);
+        recentExpenses.forEach((exp, idx) => {
+          doc.text(`${idx + 1}. ${new Date(exp.date).toLocaleDateString('id-ID')} - ${exp.description} (${exp.category}): Rp ${parseFloat(exp.amount).toLocaleString('id-ID')}`);
+        });
+      }
+    } else if (type === 'orders') {
+      const whereIn = {};
+      const whereOut = {};
+      if (startDate && endDate) {
+        whereIn.orderDate = { gte: new Date(startDate), lte: new Date(endDate) };
+        whereOut.deliveryDate = { gte: new Date(startDate), lte: new Date(endDate) };
+      }
+
+      const [ordersIn, ordersOut, sampleIn] = await Promise.all([
+        prisma.orderIn.aggregate({ where: whereIn, _sum: { totalAmount: true }, _count: true }),
+        prisma.orderOut.aggregate({ where: whereOut, _sum: { totalAmount: true }, _count: true }),
+        prisma.orderIn.findMany({ where: whereIn, orderBy: { orderDate: 'desc' }, take: 15 }),
+      ]);
+
+      doc.fontSize(14).text('RINGKASAN PESANAN', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(11);
+      doc.text(`Pesanan Masuk: ${ordersIn._count} transaksi (Rp ${parseFloat(ordersIn._sum.totalAmount || 0).toLocaleString('id-ID')})`);
+      doc.text(`Pesanan Keluar: ${ordersOut._count} transaksi (Rp ${parseFloat(ordersOut._sum.totalAmount || 0).toLocaleString('id-ID')})`);
       doc.moveDown();
-      doc.text(`Total Pengeluaran: Rp ${(expenses._sum.amount || 0).toLocaleString('id-ID')}`);
-      doc.text(`Jumlah Transaksi Pengeluaran: ${expenses._count}`);
+
+      if (sampleIn.length > 0) {
+        doc.fontSize(12).text('Daftar Pesanan Masuk:', { underline: true });
+        doc.fontSize(10);
+        sampleIn.forEach((ord, idx) => {
+          doc.text(`${idx + 1}. ${ord.orderNumber} | ${ord.customerName} | Status: ${ord.status} | Total: Rp ${parseFloat(ord.totalAmount).toLocaleString('id-ID')}`);
+        });
+      }
+    } else if (type === 'ingredients') {
+      const ingredients = await prisma.ingredient.findMany({ orderBy: { name: 'asc' } });
+      const lowStock = ingredients.filter(i => parseFloat(i.stock) <= parseFloat(i.minStock));
+
+      doc.fontSize(14).text('LAPORAN STOK BAHAN BAKU', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(11);
+      doc.text(`Total Jenis Bahan: ${ingredients.length}`);
+      doc.text(`Bahan Stok Rendah: ${lowStock.length}`);
       doc.moveDown();
-      const profit = (incomes._sum.amount || 0) - (expenses._sum.amount || 0);
-      doc.text(`Keuntungan/Kerugian: Rp ${profit.toLocaleString('id-ID')}`);
+
+      doc.fontSize(12).text('Daftar Bahan & Status Stok:', { underline: true });
+      doc.fontSize(10);
+      ingredients.forEach((ing, idx) => {
+        const isLow = parseFloat(ing.stock) <= parseFloat(ing.minStock);
+        doc.text(`${idx + 1}. ${ing.name} (${ing.category}) - Stok: ${parseFloat(ing.stock)} ${ing.unit} (Min: ${parseFloat(ing.minStock)}) ${isLow ? '[PERLU RESTOK]' : '[OK]'}`);
+      });
+    } else if (type === 'employees') {
+      const employees = await prisma.employee.findMany({ orderBy: { name: 'asc' } });
+      const totalSalary = employees.reduce((sum, e) => sum + parseFloat(e.salary || 0), 0);
+
+      doc.fontSize(14).text('LAPORAN DATA KARYAWAN', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(11);
+      doc.text(`Total Karyawan: ${employees.length}`);
+      doc.text(`Estimasi Beban Gaji: Rp ${totalSalary.toLocaleString('id-ID')}`);
+      doc.moveDown();
+
+      doc.fontSize(12).text('Daftar Karyawan:', { underline: true });
+      doc.fontSize(10);
+      employees.forEach((emp, idx) => {
+        doc.text(`${idx + 1}. [${emp.employeeId}] ${emp.name} - ${emp.position} (${emp.department}) | Status: ${emp.status}`);
+      });
     }
 
     doc.end();

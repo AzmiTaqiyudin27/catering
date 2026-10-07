@@ -1,7 +1,19 @@
 import axios from 'axios';
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
+export const getUploadUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) return path;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  if (API_BASE_URL) {
+    return `${API_BASE_URL.replace(/\/$/, '')}${cleanPath}`;
+  }
+  return cleanPath;
+};
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: `${API_BASE_URL.replace(/\/$/, '')}/api`,
   headers: {
     'Content-Type': 'application/json',
   },

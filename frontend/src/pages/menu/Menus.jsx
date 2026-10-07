@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { menusAPI } from '../../services/api';
+import { menusAPI, getUploadUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import Modal from '../../components/Modal';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -112,7 +112,7 @@ const Menus = () => {
       price: menu.price,
       isAvailable: menu.isAvailable,
     });
-    setImagePreview(menu.image);
+    setImagePreview(menu.image ? getUploadUrl(menu.image) : null);
     setIsModalOpen(true);
   };
 
@@ -219,7 +219,7 @@ const Menus = () => {
                 <div className="aspect-video bg-slate-100 relative overflow-hidden">
                   {menu.image ? (
                     <img
-                      src={menu.image}
+                      src={getUploadUrl(menu.image)}
                       alt={menu.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />

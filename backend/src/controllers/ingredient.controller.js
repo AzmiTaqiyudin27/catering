@@ -21,6 +21,34 @@ const getAllIngredients = async (req, res) => {
       where.category = category;
     }
 
+    if (lowStock === 'true') {
+      const allIngredients = await prisma.ingredient.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const filtered = allIngredients.filter(
+        (ing) => parseFloat(ing.stock) <= parseFloat(ing.minStock)
+      );
+
+      const paginated = filtered.slice(skip, skip + take);
+
+      return res.json({
+        success: true,
+        ...paginationResponse(
+          paginated,
+          filtered.length,
+          parseInt(page),
+          parseInt(limit)
+        ),
+      });
+    }
+
     const [ingredients, total] = await Promise.all([
       prisma.ingredient.findMany({
         where,
@@ -36,19 +64,11 @@ const getAllIngredients = async (req, res) => {
       prisma.ingredient.count({ where }),
     ]);
 
-    // Filter low stock if requested
-    let filteredIngredients = ingredients;
-    if (lowStock === 'true') {
-      filteredIngredients = ingredients.filter(
-        (ing) => parseFloat(ing.stock) <= parseFloat(ing.minStock)
-      );
-    }
-
     res.json({
       success: true,
       ...paginationResponse(
-        lowStock === 'true' ? filteredIngredients : ingredients,
-        lowStock === 'true' ? filteredIngredients.length : total,
+        ingredients,
+        total,
         parseInt(page),
         parseInt(limit)
       ),

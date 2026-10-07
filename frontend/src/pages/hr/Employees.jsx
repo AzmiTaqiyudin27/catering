@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { employeesAPI, reportsAPI } from '../../services/api';
+import { employeesAPI, reportsAPI, getUploadUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import Modal from '../../components/Modal';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -17,6 +17,7 @@ import {
   HiOutlineUserGroup,
   HiOutlineDownload,
   HiOutlineUser,
+  HiOutlineDocumentReport,
 } from 'react-icons/hi';
 
 const Employees = () => {
@@ -130,9 +131,27 @@ const Employees = () => {
       link.click();
       link.remove();
       
-      toast.success('Data berhasil diunduh');
+      toast.success('Data Excel berhasil diunduh');
     } catch (error) {
-      toast.error('Gagal mengunduh data');
+      toast.error('Gagal mengunduh data Excel');
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const response = await reportsAPI.generatePDF({
+        type: 'employees',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `data-karyawan-${Date.now()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Laporan PDF berhasil diunduh');
+    } catch (error) {
+      toast.error('Gagal mengunduh laporan PDF');
     }
   };
 
@@ -150,7 +169,7 @@ const Employees = () => {
       status: employee.status,
       notes: employee.notes || '',
     });
-    setPhotoPreview(employee.photo);
+    setPhotoPreview(employee.photo ? getUploadUrl(employee.photo) : null);
     setIsModalOpen(true);
   };
 
@@ -196,10 +215,14 @@ const Employees = () => {
           <h1 className="page-title">Data Karyawan</h1>
           <p className="page-subtitle">Kelola data karyawan perusahaan</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button onClick={handleExportPDF} className="btn btn-secondary">
+            <HiOutlineDocumentReport className="w-5 h-5 mr-2 text-red-500" />
+            Export PDF
+          </button>
           <button onClick={handleExport} className="btn btn-secondary">
             <HiOutlineDownload className="w-5 h-5 mr-2" />
-            Export
+            Export Excel
           </button>
           {canEdit('hr') && (
             <button
@@ -306,7 +329,7 @@ const Employees = () => {
                           <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center overflow-hidden">
                             {employee.photo ? (
                               <img
-                                src={employee.photo}
+                                src={getUploadUrl(employee.photo)}
                                 alt={employee.name}
                                 className="w-full h-full object-cover"
                               />

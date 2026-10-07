@@ -14,8 +14,8 @@ router.get('/export/orders', authorize('ADMIN_CS'), reportController.exportOrder
 router.get('/export/ingredients', authorize('ADMIN_MENU'), reportController.exportIngredientsExcel);
 router.get('/export/employees', authorize('ADMIN_SDM'), reportController.exportEmployeesExcel);
 
-// PDF Report
-router.get('/pdf', authorize('PEMILIK', 'SUPER_ADMIN'), reportController.generatePDFReport);
+// PDF Report - accessible by operational roles according to their report domain
+router.get('/pdf', authorize('PEMILIK', 'SUPER_ADMIN', 'ADMIN_KEUANGAN', 'ADMIN_CS', 'ADMIN_MENU', 'ADMIN_SDM'), reportController.generatePDFReport);
 
 module.exports = router;
 

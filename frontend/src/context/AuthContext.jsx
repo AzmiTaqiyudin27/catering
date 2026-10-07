@@ -125,6 +125,7 @@ export const AuthProvider = ({ children }) => {
 
   const canView = (module) => {
     if (!user) return false;
+    if (module === 'users') return user.role === 'SUPER_ADMIN';
     if (user.role === 'SUPER_ADMIN' || user.role === 'PEMILIK') return true;
     
     const moduleRoles = {

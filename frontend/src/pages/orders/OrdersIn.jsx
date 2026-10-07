@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ordersInAPI, menusAPI } from '../../services/api';
+import { ordersInAPI, ordersOutAPI, menusAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import Modal from '../../components/Modal';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -17,6 +17,7 @@ import {
   HiOutlineInbox,
   HiOutlineEye,
   HiOutlineX,
+  HiOutlinePaperAirplane,
 } from 'react-icons/hi';
 
 const OrdersIn = () => {
@@ -103,6 +104,35 @@ const OrdersIn = () => {
       fetchOrders();
     } catch (error) {
       toast.error('Gagal menghapus pesanan');
+    }
+  };
+
+  const handleDispatchToOut = async (order) => {
+    try {
+      const payload = {
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        customerAddress: order.customerAddress,
+        orderDate: format(new Date(order.orderDate), 'yyyy-MM-dd'),
+        deliveryDate: format(new Date(order.deliveryDate), 'yyyy-MM-dd'),
+        status: 'DELIVERED',
+        notes: order.notes ? `Dari Pesanan Masuk #${order.orderNumber}. Catatan: ${order.notes}` : `Dari Pesanan Masuk #${order.orderNumber}`,
+        items: order.items?.map((item) => ({
+          menuId: item.menuId,
+          menuName: item.menuName,
+          quantity: item.quantity,
+          unitPrice: parseFloat(item.unitPrice),
+          notes: item.notes,
+        })) || [],
+      };
+      await ordersOutAPI.create(payload);
+      if (order.status !== 'COMPLETED') {
+        await ordersInAPI.update(order.id, { status: 'COMPLETED' });
+      }
+      toast.success(`Pesanan #${order.orderNumber} berhasil diteruskan ke Pesanan Keluar!`);
+      fetchOrders();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Gagal meneruskan ke pesanan keluar');
     }
   };
 
@@ -309,6 +339,13 @@ const OrdersIn = () => {
                           </button>
                           {canEdit('orders') && (
                             <>
+                              <button
+                                onClick={() => handleDispatchToOut(order)}
+                                className="p-2 hover:bg-emerald-50 rounded-lg text-emerald-600"
+                                title="Kirim ke Pesanan Keluar"
+                              >
+                                <HiOutlinePaperAirplane className="w-5 h-5 rotate-90" />
+                              </button>
                               <button
                                 onClick={() => openEditModal(order)}
                                 className="p-2 hover:bg-slate-100 rounded-lg text-slate-600"

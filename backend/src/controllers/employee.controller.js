@@ -110,9 +110,19 @@ const createEmployee = async (req, res) => {
 
     const photo = req.file ? `/uploads/employees/${req.file.filename}` : null;
 
-    // Generate employee ID
-    const count = await prisma.employee.count();
-    const employeeId = generateEmployeeId(count);
+    // Generate unique employee ID safely
+    const allEmployees = await prisma.employee.findMany({
+      select: { employeeId: true },
+    });
+    let maxIdNum = 0;
+    allEmployees.forEach(emp => {
+      const match = emp.employeeId.match(/\d+/);
+      if (match) {
+        const num = parseInt(match[0], 10);
+        if (num > maxIdNum) maxIdNum = num;
+      }
+    });
+    const employeeId = `EMP${(maxIdNum + 1).toString().padStart(4, '0')}`;
 
     const employee = await prisma.employee.create({
       data: {

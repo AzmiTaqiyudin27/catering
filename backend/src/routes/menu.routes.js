@@ -6,10 +6,10 @@ const upload = require('../middleware/upload.middleware');
 
 router.use(authenticate);
 
-// View routes - accessible by ADMIN_MENU, SUPER_ADMIN, PEMILIK
-router.get('/', authorize('ADMIN_MENU'), menuController.getAllMenus);
-router.get('/categories', authorize('ADMIN_MENU'), menuController.getMenuCategories);
-router.get('/:id', authorize('ADMIN_MENU'), menuController.getMenuById);
+// View routes - accessible by ADMIN_MENU, ADMIN_CS, SUPER_ADMIN, PEMILIK
+router.get('/', authorize('ADMIN_MENU', 'ADMIN_CS'), menuController.getAllMenus);
+router.get('/categories', authorize('ADMIN_MENU', 'ADMIN_CS'), menuController.getMenuCategories);
+router.get('/:id', authorize('ADMIN_MENU', 'ADMIN_CS'), menuController.getMenuById);
 
 // Action routes - only ADMIN_MENU and SUPER_ADMIN
 router.post('/', authorizeAction('ADMIN_MENU'), upload.single('image'), menuController.createMenu);

@@ -85,12 +85,15 @@ async function main() {
   ];
 
   for (const menu of menus) {
-    await prisma.menu.create({
-      data: {
-        ...menu,
-        createdBy: menuUser.id,
-      },
-    });
+    const existing = await prisma.menu.findFirst({ where: { name: menu.name } });
+    if (!existing) {
+      await prisma.menu.create({
+        data: {
+          ...menu,
+          createdBy: menuUser.id,
+        },
+      });
+    }
   }
 
   console.log('✅ Menus seeded successfully!');
@@ -106,12 +109,15 @@ async function main() {
   ];
 
   for (const ingredient of ingredients) {
-    await prisma.ingredient.create({
-      data: {
-        ...ingredient,
-        createdBy: menuUser.id,
-      },
-    });
+    const existing = await prisma.ingredient.findFirst({ where: { name: ingredient.name } });
+    if (!existing) {
+      await prisma.ingredient.create({
+        data: {
+          ...ingredient,
+          createdBy: menuUser.id,
+        },
+      });
+    }
   }
 
   console.log('✅ Ingredients seeded successfully!');
@@ -127,8 +133,10 @@ async function main() {
   ];
 
   for (const employee of employees) {
-    await prisma.employee.create({
-      data: {
+    await prisma.employee.upsert({
+      where: { employeeId: employee.employeeId },
+      update: {},
+      create: {
         ...employee,
         createdBy: sdmUser.id,
       },

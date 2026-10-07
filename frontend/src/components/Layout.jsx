@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getUploadUrl } from '../services/api';
 import {
   HiOutlineHome,
   HiOutlineUsers,
@@ -25,6 +26,7 @@ import {
 const Layout = () => {
   const { user, logout, getRoleName, canView } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openMenus, setOpenMenus] = useState({});
 
@@ -98,6 +100,14 @@ const Layout = () => {
       show: canView('activities'),
     },
   ];
+
+  useEffect(() => {
+    navigation.forEach((item) => {
+      if (item.children?.some((child) => location.pathname.startsWith(child.href))) {
+        setOpenMenus((prev) => ({ ...prev, [item.name]: true }));
+      }
+    });
+  }, [location.pathname]);
 
   const NavItem = ({ item }) => {
     if (!item.show) return null;
@@ -196,10 +206,10 @@ const Layout = () => {
         {/* User section */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-100 bg-white">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center overflow-hidden">
               {user?.avatar ? (
                 <img
-                  src={user.avatar}
+                  src={getUploadUrl(user.avatar)}
                   alt={user.name}
                   className="w-10 h-10 rounded-xl object-cover"
                 />
@@ -249,10 +259,10 @@ const Layout = () => {
               <p className="text-sm font-medium text-slate-900">{user?.name}</p>
               <p className="text-xs text-slate-500">{getRoleName(user?.role)}</p>
             </div>
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center overflow-hidden">
               {user?.avatar ? (
                 <img
-                  src={user.avatar}
+                  src={getUploadUrl(user.avatar)}
                   alt={user.name}
                   className="w-10 h-10 rounded-xl object-cover"
                 />

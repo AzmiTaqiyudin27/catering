@@ -282,8 +282,37 @@ const deleteUser = async (req, res) => {
       });
     }
 
+    // Cek apakah user memiliki relasi data transaksi / aktivitas
+    const userId = parseInt(id);
+    const [incomesCount, expensesCount, ordersInCount, ordersOutCount, menusCount, ingredientsCount, employeesCount, activitiesCount] = await Promise.all([
+      prisma.income.count({ where: { createdBy: userId } }),
+      prisma.expense.count({ where: { createdBy: userId } }),
+      prisma.orderIn.count({ where: { createdBy: userId } }),
+      prisma.orderOut.count({ where: { createdBy: userId } }),
+      prisma.menu.count({ where: { createdBy: userId } }),
+      prisma.ingredient.count({ where: { createdBy: userId } }),
+      prisma.employee.count({ where: { createdBy: userId } }),
+      prisma.activityLog.count({ where: { userId } }),
+    ]);
+
+    const totalRelated = incomesCount + expensesCount + ordersInCount + ordersOutCount + menusCount + ingredientsCount + employeesCount + activitiesCount;
+
+    if (totalRelated > 0) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isActive: false },
+      });
+
+      await logActivity(req.user.id, 'UPDATE', 'USER', `Super Admin menonaktifkan akun ${existingUser.name} (memiliki ${totalRelated} riwayat data)`);
+
+      return res.json({
+        success: true,
+        message: 'Akun memiliki riwayat data/transaksi terkait, sehingga status akun dinonaktifkan demi menjaga integritas data.',
+      });
+    }
+
     await prisma.user.delete({
-      where: { id: parseInt(id) },
+      where: { id: userId },
     });
 
     await logActivity(req.user.id, 'DELETE', 'USER', `Super Admin menghapus akun ${existingUser.name}`);

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=mysql://catering_user:catering_pass@db:3306/catering_db
+      - JWT_SECRET=change-this-to-a-very-secure-random-secret-key-32chars
+      - JWT_EXPIRES_IN=7d
+      - PORT=5000
+      - NODE_ENV=production
+      - UPLOAD_PATH=./uploads
+    volumes:
+      - uploads_data:/app/backend/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secure_password
+      MYSQL_DATABASE: catering_db
+      MYSQL_USER: catering_user
+      MYSQL_PASSWORD: catering_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
+  uploads_data:
