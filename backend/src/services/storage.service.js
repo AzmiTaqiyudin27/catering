@@ -2,14 +2,25 @@ const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 const fs = require('fs');
 
+const getSupabaseUrl = () => {
+  return (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
+};
+
+const getSupabaseKey = () => {
+  return (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    ''
+  ).trim();
+};
+
 /**
  * Check if Supabase Storage credentials are provided
  */
 const isSupabaseConfigured = () => {
-  return Boolean(
-    process.env.SUPABASE_URL &&
-    (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)
-  );
+  return Boolean(getSupabaseUrl() && getSupabaseKey());
 };
 
 let supabaseClient = null;
@@ -23,8 +34,8 @@ const getSupabaseClient = () => {
   }
 
   if (!supabaseClient) {
-    const supabaseUrl = process.env.SUPABASE_URL.trim();
-    const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY).trim();
+    const supabaseUrl = getSupabaseUrl();
+    const supabaseKey = getSupabaseKey();
     supabaseClient = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
