@@ -4,7 +4,7 @@
   "description": "Fullstack Catering Management System",
   "private": true,
   "scripts": {
-    "build:backend": "npm --prefix backend run prisma:generate",
+    "build:backend": "npx prisma generate --schema=./backend/prisma/schema.prisma",
     "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
     "build": "npm run build:backend && npm run build:frontend",
     "start": "node backend/src/index.js",
@@ -12,7 +12,7 @@
     "dev:frontend": "npm --prefix frontend run dev",
     "seed": "npm --prefix backend run seed",
     "db:push": "npm --prefix backend run db:push",
-    "prisma:generate": "npm --prefix backend run prisma:generate",
+    "prisma:generate": "npx prisma generate --schema=./backend/prisma/schema.prisma",
     "test": "npm --prefix backend test"
   },
   "dependencies": {
@@ -26,6 +26,7 @@
     "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "pdfkit": "^0.14.0"
+    "pdfkit": "^0.14.0",
+    "prisma": "^5.6.0"
   }
 }
