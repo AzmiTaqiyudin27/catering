@@ -3,14 +3,9 @@
   "version": "1.0.0",
   "description": "Fullstack Catering Management System",
   "private": true,
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
   "scripts": {
-    "install:all": "npm install",
-    "build:frontend": "npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run prisma:generate",
+    "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
     "build": "npm run build:backend && npm run build:frontend",
     "start": "node backend/src/index.js",
     "dev:backend": "npm --prefix backend run dev",
@@ -18,22 +13,19 @@
     "seed": "npm --prefix backend run seed",
     "db:push": "npm --prefix backend run db:push",
     "prisma:generate": "npm --prefix backend run prisma:generate",
-    "prisma:deploy": "npm --prefix backend run prisma:deploy",
-    "test": "npm --prefix backend test",
-    "test:whitebox": "npm --prefix backend run test:whitebox",
-    "test:blackbox": "npm --prefix backend run test:blackbox"
+    "test": "npm --prefix backend test"
   },
-  "keywords": [
-    "catering",
-    "management",
-    "express",
-    "react",
-    "prisma",
-    "postgresql",
-    "neon",
-    "supabase",
-    "vercel"
-  ],
-  "author": "",
-  "license": "ISC"
+  "dependencies": {
+    "@prisma/client": "^5.6.0",
+    "@supabase/supabase-js": "^2.117.3",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.14.0"
+  }
 }
